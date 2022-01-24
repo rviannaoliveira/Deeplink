@@ -3,16 +3,28 @@ package com.rviannaoliveira.deeplink.router.domain
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
-import com.rviannaoliveira.deeplink.router.Deeplink
+import com.rviannaoliveira.deeplink.router.DeeplinkLib
 import com.rviannaoliveira.deeplink.router.DeeplinkRouteProcessor
 import com.rviannaoliveira.deeplink.router.domain.mapper.DeeplinkUriMapper
 import com.rviannaoliveira.deeplink.router.parseLinkUri
 import com.rviannaoliveira.deeplink.router.putLinkUri
 
 interface DeeplinkRouter {
+    fun buildRoute(
+        currentActivity: Activity,
+        deeplink: DeeplinkUriMapper,
+        vararg flags: Int
+    ): Intent?
+
+    fun buildRouteWithStack(
+        currentActivity: Activity,
+        deeplink: DeeplinkUriMapper,
+        vararg flags: Int
+    ): List<Intent>
+
     fun launch(
         currentActivity: Activity,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         resultRequestCode: Int? = null,
         vararg flags: Int
     )
@@ -33,7 +45,7 @@ interface DeeplinkRouter {
 
     fun launchWithStack(
         currentActivity: Activity,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         resultRequestCode: Int? = null,
         vararg flags: Int
     )
@@ -56,7 +68,7 @@ interface DeeplinkRouter {
 }
 
 class DeeplinkRouterImpl(
-    private val deeplinks: List<Deeplink>,
+    private val deeplinks: List<DeeplinkLib>,
     private val internScheme: String,
     private val externalScheme: String,
     private val routeProcessors: List<DeeplinkRouteProcessor>,
@@ -93,7 +105,7 @@ class DeeplinkRouterImpl(
      * @param flags: support intent flag
      * @return Intent with URI inside in the Bundle
      */
-    private fun buildRoute(
+    override fun buildRoute(
         currentActivity: Activity,
         deeplink: DeeplinkUriMapper,
         vararg flags: Int
@@ -108,7 +120,7 @@ class DeeplinkRouterImpl(
      * @param flags: support intent flag
      * @return List<Intent> : list of intent with each step of the stack
      */
-    private fun buildRouteWithStack(
+    override fun buildRouteWithStack(
         currentActivity: Activity,
         deeplink: DeeplinkUriMapper,
         vararg flags: Int
@@ -127,17 +139,17 @@ class DeeplinkRouterImpl(
     /**
      * Initialize the currentActiviy with a Intent already builder
      * @param currentActivity: activity will call the start
-     * @param DeeplinkProject: is a Deeplink that was convert to URI
+     * @param deeplink: is a Deeplink that was convert to URI
      * @param resultRequestCode: accepted one requestCode to use to startActivityResult
      * @param flags: support intent flag
      */
     override fun launch(
         currentActivity: Activity,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         resultRequestCode: Int?,
         vararg flags: Int
     ) {
-        startDeeplink(currentActivity, DeeplinkProject.toUri(), resultRequestCode, *flags)
+        startDeeplink(currentActivity, deeplink.toUri(), resultRequestCode, *flags)
     }
 
     /**
@@ -175,19 +187,19 @@ class DeeplinkRouterImpl(
     /**
      * Initialize the currentActiviy with a list intent already builder
      * @param currentActivity: activity will call the start
-     * @param DeeplinkProject: is a Deeplink that was convert to URI
+     * @param deeplink: is a Deeplink that was convert to URI
      * @param resultRequestCode: accepted one requestCode to use to startActivityResult
      * @param flags: support intent flag
      */
     override fun launchWithStack(
         currentActivity: Activity,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         resultRequestCode: Int?,
         vararg flags: Int
     ) {
         startDeeplinkWithStack(
             currentActivity,
-            DeeplinkProject.toUri(),
+            deeplink.toUri(),
             resultRequestCode,
             *flags
         )
@@ -266,7 +278,7 @@ class DeeplinkRouterImpl(
      * @return Deeplink object valid
      * @param uri: is a Deeplink that was convert to URI
      */
-    private fun getDeeplink(uri: DeeplinkUriMapper): Deeplink? {
+    private fun getDeeplink(uri: DeeplinkUriMapper): DeeplinkLib? {
         return deeplinks.firstOrNull {
             it.authority == authorities.firstOrNull { enum ->
                 enum.authority.equals(uri.authority, true) ||
@@ -311,14 +323,14 @@ class DeeplinkRouterImpl(
     /**
      * method that buildRoute and buildRouteWithStack use to build a route
      * @param currentActivity: activity will call the start
-     * @param DeeplinkProject: is a Deeplink that was convert to URI
+     * @param deeplink: is a Deeplink that was convert to URI
      * @return List<Class<out Activity> activity was mapped with routeProcessors
      */
     private fun buildStack(
         currentActivity: Activity,
-        DeeplinkProject: Deeplink
+        deeplink: DeeplinkLib
     ): List<Class<out Activity>> {
-        val activities = DeeplinkProject.deepLinkStack
+        val activities = deeplink.deepLinkStack
             .mapNotNull { deeplinkStack ->
                 getActivity(deeplinkStack)
             }
@@ -342,7 +354,7 @@ class DeeplinkRouterImpl(
      * @param Deeplink: is a Deeplink that was convert to URI
      * @return Class<out Activity activity was mapped with routeProcessors
      */
-    private fun getActivity(Deeplink: Deeplink): Class<out Activity>? =
+    private fun getActivity(Deeplink: DeeplinkLib): Class<out Activity>? =
         routeProcessors.firstOrNull { route ->
             route.hasRouteProcessor(Deeplink)
         }?.route(Deeplink)
@@ -351,37 +363,37 @@ class DeeplinkRouterImpl(
      * After build a list activity::class will be build the intents
      * @param currentActivity: activity will call the start
      * @param stack: all of activities
-     * @param DeeplinkProject: is a Deeplink that was convert to URI
+     * @param deeplink: is a Deeplink that was convert to URI
      * @param flags: support intent flag
      * @return List<Intent>
      */
     private fun createIntentsForStack(
         currentActivity: Activity,
         stack: List<Class<out Activity>>,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         vararg flags: Int
     ): List<Intent> =
         stack.map { activityClazz ->
-            createIntentForScreen(currentActivity, activityClazz, DeeplinkProject, *flags)
+            createIntentForScreen(currentActivity, activityClazz, deeplink, *flags)
         }
 
     /**
      * After build a list activity::class will be build the intents
      * @param activity: activity will call the start
      * @param screen: all of activities
-     * @param DeeplinkProject: is a Deeplink that was convert to URI
+     * @param deeplink: is a Deeplink that was convert to URI
      * @param flags: support intent flag
      * @return List<Intent>
      */
     private fun createIntentForScreen(
         activity: Activity,
         screen: Class<out Activity>,
-        DeeplinkProject: Deeplink,
+        deeplink: DeeplinkLib,
         vararg flags: Int
     ): Intent {
         val intent = Intent(activity, screen)
             .apply {
-                putLinkUri(DeeplinkProject.toUri())
+                putLinkUri(deeplink.toUri())
             }
 
         flags.forEach {
