@@ -1,35 +1,16 @@
 package com.rviannaoliveira.deeplink.router.domain
 
-object DeeplinkData {
-    enum class DeepLinkAuthorityEnum(val authority: String) {
-        NAME("");
+import kotlin.reflect.full.createInstance
 
-        companion object {
-            fun from(authority: String?): DeepLinkAuthorityEnum? {
-                return values().firstOrNull {
-                    it.authority.equals(authority, true)
-                }
-            }
-        }
+abstract class DeeplinkAuthority(open val authority: String){
+    companion object {
+        inline fun <reified T : DeeplinkAuthority> values(): List<T> =
+            T::class.sealedSubclasses.filterNot { it.isData }.map { it.objectInstance as T } +
+                    T::class.sealedSubclasses.filter { it.isData }.map { it.createInstance() }
     }
+}
 
-    enum class DeepLinkSchemeEnum(val scheme: String) {
-        INTERN_ROUTE("");
-
-        companion object {
-            @JvmStatic
-            fun from(scheme: String?): DeepLinkSchemeEnum? {
-                return values().firstOrNull { it.name.equals(scheme, true) }
-            }
-        }
-    }
-
-    class MapParams(private vararg val pairs: Pair<String, String>) {
-        val entries: Map<String, String>
-            get() = pairs.toMap()
-    }
-
-    object Params {
-        const val NAME = "name"
-    }
+class MapParams(private vararg val pairs: Pair<String, String>) {
+    val entries: Map<String, String>
+        get() = pairs.toMap()
 }
