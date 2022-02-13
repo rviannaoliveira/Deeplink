@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 ```
 and:
 
-```gradle
+```kotlin
 dependencies {
     implementation 'implementation 'com.github.rviannaoliveira:Deeplink:{latest version}'
 }
