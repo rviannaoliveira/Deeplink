@@ -4,7 +4,7 @@ this library helps you to make navigation flows within the application
 
 If you want to know more details about this library see this about [The Weapon Master Warrior - DynamicView](https://medium.com/@rodrigo.vianna.oliveira/3f5d3ee22ed1) a explation about the use.
 
-If you want to improve the use from the DynamicView see this Paper about [D&D - Perfect Party to your Application Android](https://medium.com/@rodrigo.vianna.oliveira/6fa4b94d8618)
+If you want to improve the use from the DynamicView see this about [D&D - Perfect Party to your Application Android](https://medium.com/@rodrigo.vianna.oliveira/6fa4b94d8618)
 
 
 ## Setup
